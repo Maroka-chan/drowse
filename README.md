@@ -88,6 +88,7 @@ Type (`finalAttrs`-compatible):
   args ? { }, # arguments passed to import ./Cargo.nix
   cargoRoot ? null, # subdirectory of src containing Cargo.toml and Cargo.lock
   dynamicCargoDeps ? true, # wrap cargoDeps in a dynamic derivation
+  outputHashes ? { }, # hashes of git dependencies, same as importCargoLock
   select ? "project: project.rootCrate.build",
   ...
 } -> derivation
@@ -112,7 +113,10 @@ drowse.crate2nix {
 };
 ```
 
-Use `cargoRoot` when the crate depends on paths outside of its own directory.
+Use `cargoRoot` when the crate depends on paths outside of its own directory,
+and `outputHashes` when it has git dependencies.
+The latter is also used as `crate-hashes.json` for `crate2nix generate`,
+which cannot prefetch them inside the sandbox.
 
 ```nix
 drowse.crate2nix {
@@ -121,6 +125,10 @@ drowse.crate2nix {
 
   src = ./..; # contains ./hello and its path dependencies
   cargoRoot = "hello";
+
+  outputHashes = {
+    "foo-0.1.0" = "sha256-<...>";
+  };
 };
 ```
 
