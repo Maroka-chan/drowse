@@ -20,6 +20,7 @@ lib.extendMkDerivation {
     finalAttrs:
     {
       args ? { },
+      cargoRoot ? null,
       dynamicCargoDeps ? true,
       select ? "project: project.rootCrate.build",
       passAsFile ? [ ],
@@ -30,6 +31,8 @@ lib.extendMkDerivation {
     }:
     let
       args' = super.mkArgs "crate2nixArgs" args;
+
+      cargoRootPrefix = lib.optionalString (cargoRoot != null) "${cargoRoot}/";
     in
     {
       cargoDeps =
@@ -39,13 +42,13 @@ lib.extendMkDerivation {
             src = writeText "cargo-deps.nix" /* nix */ ''
               { rustPlatform }:
               rustPlatform.importCargoLock {
-                lockFile = "${finalAttrs.src}/Cargo.lock";
+                lockFile = "${finalAttrs.src}/${cargoRootPrefix}Cargo.lock";
               }
             '';
           }
         else
           rustPlatform.importCargoLock {
-            lockFile = finalAttrs.src + "/Cargo.lock";
+            lockFile = finalAttrs.src + "/${cargoRootPrefix}Cargo.lock";
           };
 
       nativeBuildInputs = nativeBuildInputs ++ [
@@ -60,6 +63,7 @@ lib.extendMkDerivation {
       crate2nixArgs = args'.value;
       crate2nixSelect = select;
 
+      # evaluated from within cargoRoot, see preBuild
       expr = /* nix */ ''
         let
           args = ${args'.load};
@@ -79,6 +83,7 @@ lib.extendMkDerivation {
 
       preBuild = ''
         ${preBuild}
+        ${lib.optionalString (cargoRoot != null) ''cd "$cargoRoot"''}
         crate2nix generate
       '';
     };

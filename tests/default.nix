@@ -127,6 +127,27 @@ lib.fix (self: {
     version = "9.9.9+fancy";
   };
 
+  crate2nixCargoRoot = drowse.crate2nix {
+    pname = "app";
+    version = "0.1.0";
+    src = ./cargo-root;
+    cargoRoot = "app";
+  };
+  crate2nixCargoRootVersion = testers.testVersion {
+    package = self.crate2nixCargoRoot;
+  };
+
+  crate2nixCargoRootStatic = drowse.crate2nix {
+    pname = "app";
+    version = "0.1.0";
+    src = ./cargo-root;
+    cargoRoot = "app";
+    dynamicCargoDeps = false;
+  };
+  crate2nixCargoRootStaticVersion = testers.testVersion {
+    package = self.crate2nixCargoRootStatic;
+  };
+
   crate2nixRemote = drowse.crate2nix (finalAttrs: {
     pname = "nurl";
     version = "0.4.0";

@@ -86,6 +86,7 @@ Type (`finalAttrs`-compatible):
 {
   src,
   args ? { }, # arguments passed to import ./Cargo.nix
+  cargoRoot ? null, # subdirectory of src containing Cargo.toml and Cargo.lock
   dynamicCargoDeps ? true, # wrap cargoDeps in a dynamic derivation
   select ? "project: project.rootCrate.build",
   ...
@@ -108,6 +109,18 @@ drowse.crate2nix {
   select = ''
     project: project.rootCrate.build.override { features = [ "fancy" ]; }
   '';
+};
+```
+
+Use `cargoRoot` when the crate depends on paths outside of its own directory.
+
+```nix
+drowse.crate2nix {
+  pname = "hello";
+  version = "0.1.0";
+
+  src = ./..; # contains ./hello and its path dependencies
+  cargoRoot = "hello";
 };
 ```
 
