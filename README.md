@@ -88,6 +88,7 @@ Type (`finalAttrs`-compatible):
   args ? { }, # arguments passed to import ./Cargo.nix
   cargoRoot ? null, # subdirectory of src containing Cargo.toml and Cargo.lock
   dynamicCargoDeps ? true, # wrap cargoDeps in a dynamic derivation
+  lockFile ? null, # Cargo.lock, defaults to the one in src (and cargoRoot)
   outputHashes ? { }, # hashes of git dependencies, same as importCargoLock
   select ? "project: project.rootCrate.build",
   ...
@@ -117,6 +118,8 @@ Use `cargoRoot` when the crate depends on paths outside of its own directory,
 and `outputHashes` when it has git dependencies.
 The latter is also used as `crate-hashes.json` for `crate2nix generate`,
 which cannot prefetch them inside the sandbox.
+Setting `lockFile` separately avoids re-vendoring the dependencies whenever
+anything in `src` changes, since `cargoDeps` then only depends on `Cargo.lock`.
 
 ```nix
 drowse.crate2nix {
@@ -125,6 +128,7 @@ drowse.crate2nix {
 
   src = ./..; # contains ./hello and its path dependencies
   cargoRoot = "hello";
+  lockFile = ./Cargo.lock;
 
   outputHashes = {
     "foo-0.1.0" = "sha256-<...>";

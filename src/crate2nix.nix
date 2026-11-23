@@ -13,6 +13,7 @@ lib.extendMkDerivation {
   excludeDrvArgNames = [
     "args"
     "dynamicCargoDeps"
+    "lockFile"
     "outputHashes"
     "select"
   ];
@@ -23,6 +24,7 @@ lib.extendMkDerivation {
       args ? { },
       cargoRoot ? null,
       dynamicCargoDeps ? true,
+      lockFile ? null,
       outputHashes ? { },
       select ? "project: project.rootCrate.build",
       passAsFile ? [ ],
@@ -35,6 +37,10 @@ lib.extendMkDerivation {
       args' = super.mkArgs "crate2nixArgs" args;
 
       cargoRootPrefix = lib.optionalString (cargoRoot != null) "${cargoRoot}/";
+
+      # a separate lockFile keeps cargoDeps from depending on all of src,
+      # which would otherwise re-vendor the dependencies on every change
+      lockFile' = if lockFile != null then lockFile else finalAttrs.src + "/${cargoRootPrefix}Cargo.lock";
 
       # crate2nix falls back to matching crate-hashes.json entries on
       # `<name>@<version>` when the package ID does not match
@@ -57,7 +63,9 @@ lib.extendMkDerivation {
             src = writeText "cargo-deps.nix" /* nix */ ''
               { rustPlatform, outputHashes }:
               rustPlatform.importCargoLock {
-                lockFile = "${finalAttrs.src}/${cargoRootPrefix}Cargo.lock";
+                # the store path has no context here, so importCargoLock's
+                # Cargo.lock symlink to it would dangle in the vendor dir
+                lockFileContents = builtins.readFile "${lockFile'}";
                 inherit outputHashes;
               }
             '';
@@ -65,7 +73,7 @@ lib.extendMkDerivation {
           }
         else
           rustPlatform.importCargoLock {
-            lockFile = finalAttrs.src + "/${cargoRootPrefix}Cargo.lock";
+            lockFile = lockFile';
             inherit outputHashes;
           };
 

@@ -148,6 +148,17 @@ lib.fix (self: {
     package = self.crate2nixCargoRootStatic;
   };
 
+  crate2nixLockFile = drowse.crate2nix {
+    pname = "app";
+    version = "0.1.0";
+    src = ./cargo-root;
+    cargoRoot = "app";
+    lockFile = ./cargo-root/app/Cargo.lock;
+  };
+  crate2nixLockFileVersion = testers.testVersion {
+    package = self.crate2nixLockFile;
+  };
+
   crate2nixRemote = drowse.crate2nix (finalAttrs: {
     pname = "nurl";
     version = "0.4.0";
